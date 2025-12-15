@@ -2,7 +2,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
 import Logo from "@/components/brand/Logo";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { getApiUrl } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -52,26 +52,35 @@ export default function Register() {
     }
 
     try {
-      const response = await fetch(getApiUrl("/usuarios"), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ nome, email, senha, cargo, curso }),
-      });
+      const { data, error: insertError } = await supabase
+        .from("Usuario")
+        .insert([
+          {
+            nome,
+            email,
+            senha,
+            cargo,
+          },
+        ])
+        .select("id, nome, email, cargo")
+        .single();
 
-      const data = await response.json();
+      if (insertError) {
+        setError(insertError.message || "Erro ao criar conta");
+        setLoading(false);
+        return;
+      }
 
-      if (!response.ok) {
-        setError(data.error || "Erro ao criar conta");
+      if (!data) {
+        setError("Erro ao criar conta");
         setLoading(false);
         return;
       }
 
       setCurrentUser(data);
       navigate("/dashboard");
-    } catch (err) {
-      setError("Erro ao conectar com o servidor");
+    } catch (err: any) {
+      setError(err?.message || "Erro ao conectar com o servidor");
       setLoading(false);
     }
   };
@@ -83,7 +92,9 @@ export default function Register() {
           <div className="w-full flex items-center gap-4">
             <Logo className="h-28" wordmark={false} />
             <div className="h-20 w-px bg-primary-foreground/40" />
-            <div className="text-3xl font-semibold tracking-tight">Barreiro 360</div>
+            <div className="text-3xl font-semibold tracking-tight">
+              Barreiro 360
+            </div>
           </div>
         </div>
       </section>
@@ -91,7 +102,9 @@ export default function Register() {
         <div className="w-full max-w-sm">
           <div className="mb-8 text-center">
             <p className="text-sm text-muted-foreground">PUC Minas</p>
-            <h2 className="text-2xl font-semibold tracking-tight">Criar conta</h2>
+            <h2 className="text-2xl font-semibold tracking-tight">
+              Criar conta
+            </h2>
           </div>
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-1.5">

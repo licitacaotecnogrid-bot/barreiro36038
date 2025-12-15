@@ -1,34 +1,56 @@
--- Tabela de Usuários
+-- Usuario table
 CREATE TABLE IF NOT EXISTS "Usuario" (
   id SERIAL PRIMARY KEY,
   nome TEXT NOT NULL,
-  email TEXT NOT NULL UNIQUE,
+  email TEXT UNIQUE NOT NULL,
   senha TEXT NOT NULL,
   cargo TEXT NOT NULL,
   "criadoEm" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   "atualizadoEm" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabela de Professores Coordenadores
+-- ProfessorCoordenador table
 CREATE TABLE IF NOT EXISTS "ProfessorCoordenador" (
   id SERIAL PRIMARY KEY,
   nome TEXT NOT NULL,
-  email TEXT NOT NULL UNIQUE,
+  email TEXT UNIQUE NOT NULL,
   senha TEXT NOT NULL,
   curso TEXT NOT NULL,
   "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabela de Eventos
+-- Materia table
+CREATE TABLE IF NOT EXISTS "Materia" (
+  id SERIAL PRIMARY KEY,
+  nome TEXT UNIQUE NOT NULL,
+  descricao TEXT NOT NULL,
+  "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- MateriaProfessor table
+CREATE TABLE IF NOT EXISTS "MateriaProfessor" (
+  id SERIAL PRIMARY KEY,
+  "professorId" INTEGER NOT NULL,
+  "materiaId" INTEGER NOT NULL,
+  "tipoCoordenacao" TEXT NOT NULL,
+  "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY ("professorId") REFERENCES "ProfessorCoordenador"(id) ON DELETE CASCADE,
+  FOREIGN KEY ("materiaId") REFERENCES "Materia"(id) ON DELETE CASCADE,
+  UNIQUE ("professorId", "materiaId", "tipoCoordenacao")
+);
+
+-- Evento table
 CREATE TABLE IF NOT EXISTS "Evento" (
   id SERIAL PRIMARY KEY,
   titulo TEXT NOT NULL,
   data TIMESTAMP NOT NULL,
   responsavel TEXT NOT NULL,
-  status TEXT DEFAULT 'Pendente',
+  status TEXT NOT NULL,
   local TEXT,
-  curso TEXT,
+  curso TEXT NOT NULL,
   "tipoEvento" TEXT NOT NULL,
   modalidade TEXT NOT NULL,
   descricao TEXT,
@@ -39,17 +61,17 @@ CREATE TABLE IF NOT EXISTS "Evento" (
   "atualizadoEm" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabela de ODS Associadas aos Eventos
+-- OdsEvento table
 CREATE TABLE IF NOT EXISTS "OdsEvento" (
   id SERIAL PRIMARY KEY,
   "eventoId" INTEGER NOT NULL,
   "odsNumero" INTEGER NOT NULL,
   "criadoEm" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE("eventoId", "odsNumero"),
-  FOREIGN KEY ("eventoId") REFERENCES "Evento"(id) ON DELETE CASCADE
+  FOREIGN KEY ("eventoId") REFERENCES "Evento"(id) ON DELETE CASCADE,
+  UNIQUE ("eventoId", "odsNumero")
 );
 
--- Tabela de Anexos de Eventos
+-- AnexoEvento table
 CREATE TABLE IF NOT EXISTS "AnexoEvento" (
   id SERIAL PRIMARY KEY,
   "eventoId" INTEGER NOT NULL,
@@ -58,7 +80,7 @@ CREATE TABLE IF NOT EXISTS "AnexoEvento" (
   FOREIGN KEY ("eventoId") REFERENCES "Evento"(id) ON DELETE CASCADE
 );
 
--- Tabela de Comentários de Eventos
+-- ComentarioEvento table
 CREATE TABLE IF NOT EXISTS "ComentarioEvento" (
   id SERIAL PRIMARY KEY,
   "eventoId" INTEGER NOT NULL,
@@ -71,7 +93,7 @@ CREATE TABLE IF NOT EXISTS "ComentarioEvento" (
   FOREIGN KEY ("usuarioId") REFERENCES "Usuario"(id) ON DELETE SET NULL
 );
 
--- Tabela de Projetos de Pesquisa
+-- ProjetoPesquisa table
 CREATE TABLE IF NOT EXISTS "ProjetoPesquisa" (
   id SERIAL PRIMARY KEY,
   titulo TEXT NOT NULL,
@@ -88,7 +110,7 @@ CREATE TABLE IF NOT EXISTS "ProjetoPesquisa" (
   FOREIGN KEY ("professorCoordenadorId") REFERENCES "Usuario"(id) ON DELETE CASCADE
 );
 
--- Tabela de Projetos de Extensão
+-- ProjetoExtensao table
 CREATE TABLE IF NOT EXISTS "ProjetoExtensao" (
   id SERIAL PRIMARY KEY,
   titulo TEXT NOT NULL,
@@ -104,55 +126,37 @@ CREATE TABLE IF NOT EXISTS "ProjetoExtensao" (
   FOREIGN KEY ("professorCoordenadorId") REFERENCES "Usuario"(id) ON DELETE CASCADE
 );
 
--- Tabela de Matérias
-CREATE TABLE IF NOT EXISTS "Materia" (
-  id SERIAL PRIMARY KEY,
-  nome TEXT NOT NULL UNIQUE,
-  descricao TEXT NOT NULL,
-  "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Tabela de Associação Materia-Professor
-CREATE TABLE IF NOT EXISTS "MateriaProfessor" (
-  id SERIAL PRIMARY KEY,
-  "professorId" INTEGER NOT NULL,
-  "materiaId" INTEGER NOT NULL,
-  "tipoCoordenacao" TEXT NOT NULL,
-  "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE("professorId", "materiaId", "tipoCoordenacao"),
-  FOREIGN KEY ("professorId") REFERENCES "ProfessorCoordenador"(id) ON DELETE CASCADE,
-  FOREIGN KEY ("materiaId") REFERENCES "Materia"(id) ON DELETE CASCADE
-);
-
--- Tabela de Associação Materia-ProjetoPesquisa
+-- MateriaProjetoPesquisa table
 CREATE TABLE IF NOT EXISTS "MateriaProjetoPesquisa" (
   id SERIAL PRIMARY KEY,
   "materiaId" INTEGER NOT NULL,
   "projetoPesquisaId" INTEGER NOT NULL,
   "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE("materiaId", "projetoPesquisaId"),
   FOREIGN KEY ("materiaId") REFERENCES "Materia"(id) ON DELETE CASCADE,
-  FOREIGN KEY ("projetoPesquisaId") REFERENCES "ProjetoPesquisa"(id) ON DELETE CASCADE
+  FOREIGN KEY ("projetoPesquisaId") REFERENCES "ProjetoPesquisa"(id) ON DELETE CASCADE,
+  UNIQUE ("materiaId", "projetoPesquisaId")
 );
 
--- Tabela de Associação Materia-ProjetoExtensao
+-- MateriaProjetoExtensao table
 CREATE TABLE IF NOT EXISTS "MateriaProjetoExtensao" (
   id SERIAL PRIMARY KEY,
   "materiaId" INTEGER NOT NULL,
   "projetoExtensaoId" INTEGER NOT NULL,
   "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE("materiaId", "projetoExtensaoId"),
   FOREIGN KEY ("materiaId") REFERENCES "Materia"(id) ON DELETE CASCADE,
-  FOREIGN KEY ("projetoExtensaoId") REFERENCES "ProjetoExtensao"(id) ON DELETE CASCADE
+  FOREIGN KEY ("projetoExtensaoId") REFERENCES "ProjetoExtensao"(id) ON DELETE CASCADE,
+  UNIQUE ("materiaId", "projetoExtensaoId")
 );
 
--- Índices para melhor performance
+-- Create indexes for better query performance
+CREATE INDEX IF NOT EXISTS idx_usuario_email ON "Usuario"(email);
 CREATE INDEX IF NOT EXISTS idx_evento_data ON "Evento"(data);
-CREATE INDEX IF NOT EXISTS idx_projetoPesquisa_profesor ON "ProjetoPesquisa"("professorCoordenadorId");
-CREATE INDEX IF NOT EXISTS idx_projetoExtensao_profesor ON "ProjetoExtensao"("professorCoordenadorId");
-CREATE INDEX IF NOT EXISTS idx_materia_professor_materia ON "MateriaProfessor"("materiaId");
-CREATE INDEX IF NOT EXISTS idx_materia_pesquisa_materia ON "MateriaProjetoPesquisa"("materiaId");
-CREATE INDEX IF NOT EXISTS idx_materia_extensao_materia ON "MateriaProjetoExtensao"("materiaId");
+CREATE INDEX IF NOT EXISTS idx_evento_responsavel ON "Evento"(responsavel);
 CREATE INDEX IF NOT EXISTS idx_comentario_evento ON "ComentarioEvento"("eventoId");
+CREATE INDEX IF NOT EXISTS idx_comentario_usuario ON "ComentarioEvento"("usuarioId");
 CREATE INDEX IF NOT EXISTS idx_ods_evento ON "OdsEvento"("eventoId");
+CREATE INDEX IF NOT EXISTS idx_anexo_evento ON "AnexoEvento"("eventoId");
+CREATE INDEX IF NOT EXISTS idx_professor_coordenador_email ON "ProfessorCoordenador"(email);
+CREATE INDEX IF NOT EXISTS idx_materia_nome ON "Materia"(nome);
+CREATE INDEX IF NOT EXISTS idx_materia_professor ON "MateriaProfessor"("professorId");
+CREATE INDEX IF NOT EXISTS idx_materia_materia ON "MateriaProfessor"("materiaId");
