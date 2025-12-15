@@ -23,28 +23,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // For PostgreSQL (Supabase)
-    const { Pool } = require('pg');
+    const { default: pg } = await import('pg');
+    const { Pool } = pg;
     const pool = new Pool({ connectionString: databaseUrl });
 
-    const result = await pool.query(
-      'SELECT id, nome, email, cargo FROM "Usuario" WHERE email = $1 AND senha = $2',
-      [email, senha]
-    );
+    try {
+      const result = await pool.query(
+        'SELECT id, nome, email, cargo FROM "Usuario" WHERE email = $1 AND senha = $2',
+        [email, senha]
+      );
 
-    await pool.end();
+      if (result.rows.length === 0) {
+        res.status(401).json({ error: 'Usuário não encontrado ou senha incorreta' });
+        return;
+      }
 
-    if (result.rows.length === 0) {
-      res.status(401).json({ error: 'Usuário não encontrado ou senha incorreta' });
-      return;
+      const usuario = result.rows[0];
+      res.json({
+        id: usuario.id,
+        nome: usuario.nome,
+        email: usuario.email,
+        cargo: usuario.cargo,
+      });
+    } finally {
+      await pool.end();
     }
-
-    const usuario = result.rows[0];
-    res.json({
-      id: usuario.id,
-      nome: usuario.nome,
-      email: usuario.email,
-      cargo: usuario.cargo,
-    });
   } catch (error) {
     console.error('Erro ao fazer login:', error);
     res.status(500).json({ error: 'Erro ao fazer login' });
