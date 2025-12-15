@@ -33,7 +33,8 @@
     "db:clear": "tsx database/cli.ts clear",
     "db:export": "tsx database/cli.ts export",
     "db:seed": "tsx database/seed.ts",
-    "setup:neon": "tsx scripts/setup-neon.ts"
+    "setup:neon": "tsx scripts/setup-neon.ts",
+    "setup:supabase": "tsx scripts/setup-supabase.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
