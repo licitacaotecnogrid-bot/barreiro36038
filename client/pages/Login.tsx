@@ -64,7 +64,9 @@ export default function Login() {
           <div className="w-full flex items-center gap-4">
             <Logo className="h-28" wordmark={false} />
             <div className="h-20 w-px bg-primary-foreground/40" />
-            <div className="text-3xl font-semibold tracking-tight">Barreiro 360</div>
+            <div className="text-3xl font-semibold tracking-tight">
+              Barreiro 360
+            </div>
           </div>
         </div>
       </section>
@@ -72,7 +74,9 @@ export default function Login() {
         <div className="w-full max-w-sm">
           <div className="mb-8 text-center">
             <p className="text-sm text-muted-foreground">PUC Minas</p>
-            <h2 className="text-2xl font-semibold tracking-tight">Acessar conta</h2>
+            <h2 className="text-2xl font-semibold tracking-tight">
+              Acessar conta
+            </h2>
           </div>
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-1.5">
