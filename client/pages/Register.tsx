@@ -52,26 +52,35 @@ export default function Register() {
     }
 
     try {
-      const response = await fetch(getApiUrl("/usuarios"), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ nome, email, senha, cargo, curso }),
-      });
+      const { data, error: insertError } = await supabase
+        .from("Usuario")
+        .insert([
+          {
+            nome,
+            email,
+            senha,
+            cargo,
+          }
+        ])
+        .select("id, nome, email, cargo")
+        .single();
 
-      const data = await response.json();
+      if (insertError) {
+        setError(insertError.message || "Erro ao criar conta");
+        setLoading(false);
+        return;
+      }
 
-      if (!response.ok) {
-        setError(data.error || "Erro ao criar conta");
+      if (!data) {
+        setError("Erro ao criar conta");
         setLoading(false);
         return;
       }
 
       setCurrentUser(data);
       navigate("/dashboard");
-    } catch (err) {
-      setError("Erro ao conectar com o servidor");
+    } catch (err: any) {
+      setError(err?.message || "Erro ao conectar com o servidor");
       setLoading(false);
     }
   };
