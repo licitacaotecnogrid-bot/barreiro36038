@@ -2,7 +2,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
 import Logo from "@/components/brand/Logo";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { getApiUrl } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
 export default function Register() {
   const navigate = useNavigate();
