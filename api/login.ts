@@ -1,4 +1,5 @@
 import { VercelRequest, VercelResponse } from "@vercel/node";
+import { Pool } from "pg";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
@@ -6,57 +7,47 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
+  const databaseUrl = process.env.DATABASE_URL;
+
+  if (!databaseUrl) {
+    console.error("DATABASE_URL não configurada");
+    return res.status(500).json({
+      error:
+        "Banco de dados não configurado. Configure a variável DATABASE_URL em suas variáveis de ambiente do Vercel.",
+    });
+  }
+
   try {
     const { email, senha } = req.body;
 
     if (!email || !senha) {
-      res.status(400).json({ error: "Email e senha são obrigatórios" });
-      return;
+      return res.status(400).json({ error: "Email e senha são obrigatórios" });
     }
 
-    const databaseUrl = process.env.DATABASE_URL;
-
-    if (!databaseUrl) {
-      console.error("DATABASE_URL não configurada");
-      res
-        .status(500)
-        .json({
-          error:
-            "Banco de dados não configurado. Configure a variável DATABASE_URL em suas variáveis de ambiente do Vercel.",
-        });
-      return;
-    }
-
-    // For PostgreSQL (Supabase)
-    const { default: pg } = await import("pg");
-    const { Pool } = pg;
     const pool = new Pool({ connectionString: databaseUrl });
 
-    try {
-      const result = await pool.query(
-        'SELECT id, nome, email, cargo FROM "Usuario" WHERE email = $1 AND senha = $2',
-        [email, senha],
-      );
+    const result = await pool.query(
+      'SELECT id, nome, email, cargo FROM "Usuario" WHERE email = $1 AND senha = $2',
+      [email, senha],
+    );
 
-      if (result.rows.length === 0) {
-        res
-          .status(401)
-          .json({ error: "Usuário não encontrado ou senha incorreta" });
-        return;
-      }
+    await pool.end();
 
-      const usuario = result.rows[0];
-      res.json({
-        id: usuario.id,
-        nome: usuario.nome,
-        email: usuario.email,
-        cargo: usuario.cargo,
-      });
-    } finally {
-      await pool.end();
+    if (result.rows.length === 0) {
+      return res
+        .status(401)
+        .json({ error: "Usuário não encontrado ou senha incorreta" });
     }
+
+    const usuario = result.rows[0];
+    return res.json({
+      id: usuario.id,
+      nome: usuario.nome,
+      email: usuario.email,
+      cargo: usuario.cargo,
+    });
   } catch (error) {
     console.error("Erro ao fazer login:", error);
-    res.status(500).json({ error: "Erro ao fazer login" });
+    return res.status(500).json({ error: "Erro ao fazer login" });
   }
 }
