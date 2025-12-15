@@ -1,0 +1,6 @@
+name = "barreiro360"
+compatibility_date = "2024-12-16"
+main = "_worker.js"
+
+[env.production.vars]
+ENVIRONMENT = "production"
