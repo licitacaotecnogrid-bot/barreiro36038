@@ -1,18 +1,17 @@
 import { VercelRequest, VercelResponse } from "@vercel/node";
-import { Pool } from "pg";
+import postgres from "postgres";
 
-let pool: Pool | null = null;
+let sql: ReturnType<typeof postgres> | null = null;
 
-function getPool(databaseUrl: string): Pool {
-  if (!pool) {
-    pool = new Pool({
-      connectionString: databaseUrl,
+function getSql(databaseUrl: string): ReturnType<typeof postgres> {
+  if (!sql) {
+    sql = postgres(databaseUrl, {
       max: 1,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000,
+      idle_timeout: 30,
+      connect_timeout: 10,
     });
   }
-  return pool;
+  return sql;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -37,32 +36,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: "Email e senha são obrigatórios" });
     }
 
-    const dbPool = getPool(databaseUrl);
+    const db = getSql(databaseUrl);
 
-    let result;
     try {
-      result = await dbPool.query(
-        'SELECT id, nome, email, cargo FROM "Usuario" WHERE email = $1 AND senha = $2',
-        [email, senha],
-      );
+      const usuarios = await db`
+        SELECT id, nome, email, cargo FROM "Usuario"
+        WHERE email = ${email} AND senha = ${senha}
+      `;
+
+      if (usuarios.length === 0) {
+        return res
+          .status(401)
+          .json({ error: "Usuário não encontrado ou senha incorreta" });
+      }
+
+      const usuario = usuarios[0];
+      return res.json({
+        id: usuario.id,
+        nome: usuario.nome,
+        email: usuario.email,
+        cargo: usuario.cargo,
+      });
     } catch (queryError) {
       console.error("Erro na query:", queryError);
       return res.status(500).json({ error: "Erro ao consultar banco de dados" });
     }
-
-    if (result.rows.length === 0) {
-      return res
-        .status(401)
-        .json({ error: "Usuário não encontrado ou senha incorreta" });
-    }
-
-    const usuario = result.rows[0];
-    return res.json({
-      id: usuario.id,
-      nome: usuario.nome,
-      email: usuario.email,
-      cargo: usuario.cargo,
-    });
   } catch (error) {
     console.error("Erro ao fazer login:", error);
     return res.status(500).json({ error: "Erro ao fazer login" });
