@@ -1,6 +1,20 @@
 import { VercelRequest, VercelResponse } from "@vercel/node";
 import { Pool } from "pg";
 
+let pool: Pool | null = null;
+
+function getPool(databaseUrl: string): Pool {
+  if (!pool) {
+    pool = new Pool({
+      connectionString: databaseUrl,
+      max: 1,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 5000,
+    });
+  }
+  return pool;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     res.status(405).json({ error: "Method not allowed" });
@@ -12,8 +26,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!databaseUrl) {
     console.error("DATABASE_URL não configurada");
     return res.status(500).json({
-      error:
-        "Banco de dados não configurado. Configure a variável DATABASE_URL em suas variáveis de ambiente do Vercel.",
+      error: "Banco de dados não configurado",
     });
   }
 
@@ -24,14 +37,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: "Email e senha são obrigatórios" });
     }
 
-    const pool = new Pool({ connectionString: databaseUrl });
+    const dbPool = getPool(databaseUrl);
 
-    const result = await pool.query(
-      'SELECT id, nome, email, cargo FROM "Usuario" WHERE email = $1 AND senha = $2',
-      [email, senha],
-    );
-
-    await pool.end();
+    let result;
+    try {
+      result = await dbPool.query(
+        'SELECT id, nome, email, cargo FROM "Usuario" WHERE email = $1 AND senha = $2',
+        [email, senha],
+      );
+    } catch (queryError) {
+      console.error("Erro na query:", queryError);
+      return res.status(500).json({ error: "Erro ao consultar banco de dados" });
+    }
 
     if (result.rows.length === 0) {
       return res
