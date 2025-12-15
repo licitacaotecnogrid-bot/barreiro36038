@@ -1,19 +1,6 @@
 import { VercelRequest, VercelResponse } from "@vercel/node";
 import postgres from "postgres";
 
-let sql: ReturnType<typeof postgres> | null = null;
-
-function getSql(databaseUrl: string): ReturnType<typeof postgres> {
-  if (!sql) {
-    sql = postgres(databaseUrl, {
-      max: 1,
-      idle_timeout: 30,
-      connect_timeout: 10,
-    });
-  }
-  return sql;
-}
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     res.status(405).json({ error: "Method not allowed" });
@@ -36,13 +23,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: "Email e senha são obrigatórios" });
     }
 
-    const db = getSql(databaseUrl);
+    // Create a new connection for this request (serverless-friendly)
+    const sql = postgres(databaseUrl, {
+      ssl: "require",
+      max: 1,
+      idle_timeout: 10,
+      connect_timeout: 15,
+    });
 
     try {
-      const usuarios = await db`
+      const usuarios = await sql`
         SELECT id, nome, email, cargo FROM "Usuario"
         WHERE email = ${email} AND senha = ${senha}
       `;
+
+      await sql.end();
 
       if (usuarios.length === 0) {
         return res
@@ -57,14 +52,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         email: usuario.email,
         cargo: usuario.cargo,
       });
-    } catch (queryError) {
-      console.error("Erro na query:", queryError);
-      return res
-        .status(500)
-        .json({ error: "Erro ao consultar banco de dados" });
+    } catch (queryError: any) {
+      console.error("Erro na query:", queryError?.message, queryError?.code);
+      await sql.end().catch(() => {});
+      return res.status(500).json({ error: "Erro ao consultar banco de dados" });
     }
-  } catch (error) {
-    console.error("Erro ao fazer login:", error);
+  } catch (error: any) {
+    console.error("Erro ao fazer login:", error?.message);
     return res.status(500).json({ error: "Erro ao fazer login" });
   }
 }
