@@ -55,7 +55,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } catch (queryError: any) {
       console.error("Erro na query:", queryError?.message, queryError?.code);
       await sql.end().catch(() => {});
-      return res.status(500).json({ error: "Erro ao consultar banco de dados" });
+      return res
+        .status(500)
+        .json({ error: "Erro ao consultar banco de dados" });
     }
   } catch (error: any) {
     console.error("Erro ao fazer login:", error?.message);
