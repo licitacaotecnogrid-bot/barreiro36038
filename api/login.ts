@@ -18,12 +18,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!databaseUrl) {
       console.error('DATABASE_URL não configurada');
-      res.status(500).json({ error: 'Servidor não configurado corretamente' });
+      res.status(500).json({ error: 'Banco de dados não configurado. Configure a variável DATABASE_URL em suas variáveis de ambiente do Vercel.' });
       return;
     }
 
     // For PostgreSQL (Supabase)
-    const { Pool } = await import('pg');
+    const { Pool } = require('pg');
     const pool = new Pool({ connectionString: databaseUrl });
 
     const result = await pool.query(
