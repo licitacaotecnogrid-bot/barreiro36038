@@ -2,7 +2,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
 import Logo from "@/components/brand/Logo";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { getApiUrl } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -30,18 +30,21 @@ export default function Login() {
     }
 
     try {
-      const response = await fetch(getApiUrl("/login"), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, senha }),
-      });
+      const { data, error: queryError } = await supabase
+        .from("Usuario")
+        .select("id, nome, email, cargo")
+        .eq("email", email)
+        .eq("senha", senha)
+        .maybeSingle();
 
-      const data = await response.json();
+      if (queryError) {
+        setError("Erro ao consultar banco de dados");
+        setLoading(false);
+        return;
+      }
 
-      if (!response.ok) {
-        setError(data.error || "Erro ao fazer login");
+      if (!data) {
+        setError("Usuário não encontrado ou senha incorreta");
         setLoading(false);
         return;
       }
