@@ -19,7 +19,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     `;
 
     if (result.rows.length === 0) {
-      return res.status(401).json({ error: "Usuário não encontrado ou senha incorreta" });
+      return res
+        .status(401)
+        .json({ error: "Usuário não encontrado ou senha incorreta" });
     }
 
     const usuario = result.rows[0];
